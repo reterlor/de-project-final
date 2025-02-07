@@ -20,4 +20,5 @@ CREATE TABLE STV2024101049__STAGING.transactions (
     transaction_dt TIMESTAMP NOT NULL
 )
 ORDER BY transaction_dt, operation_id
-SEGMENTED BY hash(transaction_dt, operation_id) ALL NODES;
+SEGMENTED BY hash(transaction_dt, operation_id) ALL NODES
+PARTITION BY currency_code;

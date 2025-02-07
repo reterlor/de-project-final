@@ -1,11 +1,23 @@
-from airflow import DAG
-from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.providers.vertica.hooks.vertica import VerticaHook
-from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.providers.vertica.hooks.vertica import VerticaHook
+
 def extract_from_postgres(execution_date):
+    """
+    Извлекает данные о курсах валют из PostgreSQL за предыдущий день.
+
+    Аргументы:
+        execution_date: Дата выполнения.
+
+    Возвращает:
+        flattened_values: Список значений, содержащих дату обновления, код валюты,
+                          код валюты для обмена и коэффициент обмена, приведённый к строке.
+    """
     execution_date = datetime.strptime(execution_date, '%Y-%m-%d').date()
     data_date = execution_date - timedelta(days=1)
     pg_hook = PostgresHook(postgres_conn_id='postgre-diploma')
@@ -23,6 +35,12 @@ def extract_from_postgres(execution_date):
     return flattened_values
 
 def load_into_vertica(ti):
+    """
+    Загружает данные о курсах валют в Vertica.
+
+    Аргументы:
+        ti: Объект задачи Airflow для извлечения данных.
+    """
     vertica_hook = VerticaHook(vertica_conn_id='vertica-diploma')
     flattened_values = ti.xcom_pull(task_ids='extract_from_postgres_currencies')
 
@@ -38,6 +56,16 @@ def load_into_vertica(ti):
         vertica_hook.run(insert_query, parameters=flattened_values)
 
 def extract_from_postgres_transactions(execution_date):
+    """
+    Извлекает данные о транзакциях из PostgreSQL за предыдущий день.
+
+    Аргументы:
+        execution_date: Дата выполнения.
+
+    Возвращает:
+        flattened_values: Список значений, содержащих идентификатор операции, номера счетов,
+                          код валюты, страну, статус, тип транзакции, сумму и дату транзакции.
+    """
     execution_date = datetime.strptime(execution_date, '%Y-%m-%d').date()
     data_date = execution_date - timedelta(days=1)
     pg_hook = PostgresHook(postgres_conn_id='postgre-diploma')
@@ -56,6 +84,12 @@ def extract_from_postgres_transactions(execution_date):
     return flattened_values
 
 def load_into_vertica_transactions(ti):
+    """
+    Загружает данные о транзакциях в Vertica.
+
+    Аргументы:
+        ti: Объект задачи Airflow для извлечения данных.
+    """
     vertica_hook = VerticaHook(vertica_conn_id='vertica-diploma')
     flattened_values = ti.xcom_pull(task_ids='extract_from_postgres_transactions')
 
@@ -71,6 +105,13 @@ def load_into_vertica_transactions(ti):
         vertica_hook.run(insert_query, parameters=flattened_values)
 
 def load_into_vertica_global_metrics(execution_date):
+    """
+    Заполняет витрину в Vertica глобальными метриками за предыдущий день, выполняя SQL-запрос из файла.
+
+    Аргументы:
+        execution_date: Дата выполнения.
+
+    """
     vertica_hook = VerticaHook(vertica_conn_id='vertica-diploma')
     execution_date = datetime.strptime(execution_date, '%Y-%m-%d').date()
     data_date = execution_date - timedelta(days=1)

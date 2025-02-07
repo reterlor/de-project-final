@@ -6,4 +6,5 @@ CREATE TABLE STV2024101049__STAGING.currencies (
     PRIMARY KEY (date_update, currency_code, currency_code_with)
 )
 ORDER BY date_update
-SEGMENTED BY hash(date_update) ALL NODES;
+SEGMENTED BY hash(date_update) ALL NODES
+PARTITION BY date_update;

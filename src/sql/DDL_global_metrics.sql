@@ -7,4 +7,5 @@ CREATE TABLE STV2024101049__DWH.global_metrics (
     cnt_accounts_make_transactions INT NOT NULL
 )
 ORDER BY date_update, currency_from
-SEGMENTED BY hash(date_update) ALL NODES;
+SEGMENTED BY hash(date_update) ALL NODES
+PARTITION BY date_update;
